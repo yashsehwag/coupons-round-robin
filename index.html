@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Round Robin Coupon Distribution</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .coupon { font-size: 24px; font-weight: bold; color: white; background: #28a745; padding: 15px; display: inline-block; border-radius: 8px; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Welcome Guest!</h1>
+    <p>Click the button below to get your coupon.</p>
+    <button onclick="assignCoupon()">Get Coupon</button>
+    <div id="couponDisplay" class="coupon" style="display: none;"></div>
+
+    <script>
+        const coupons = ["SAVE10", "DISCOUNT20", "OFFER30", "PROMO40"];
+        let currentIndex = parseInt(localStorage.getItem("currentIndex")) || 0;
+        const cooldownTime = 60 * 1000; // 60 seconds cooldown
+        
+        function assignCoupon() {
+            const lastClaimTime = parseInt(localStorage.getItem("lastClaimTime")) || 0;
+            const now = Date.now();
+            
+            if (now - lastClaimTime < cooldownTime) {
+                alert("You can only claim one coupon per minute. Please wait.");
+                return;
+            }
+            
+            const coupon = coupons[currentIndex];
+            document.getElementById("couponDisplay").innerText = "Your Coupon: " + coupon;
+            document.getElementById("couponDisplay").style.display = "block";
+            
+            // Save the current time to enforce cooldown
+            localStorage.setItem("lastClaimTime", now);
+            
+            // Move to the next coupon in round-robin fashion
+            currentIndex = (currentIndex + 1) % coupons.length;
+            localStorage.setItem("currentIndex", currentIndex);
+        }
+    </script>
+</body>
+</html>
