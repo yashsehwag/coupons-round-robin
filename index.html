@@ -15,31 +15,52 @@
     <p>Click the button below to get your coupon.</p>
     <button onclick="assignCoupon()">Get Coupon</button>
     <div id="couponDisplay" class="coupon" style="display: none;"></div>
+    <p id="feedback" style="color: red; font-weight: bold;"></p>
 
     <script>
         const coupons = ["SAVE10", "DISCOUNT20", "OFFER30", "PROMO40"];
-        let currentIndex = parseInt(localStorage.getItem("currentIndex")) || 0;
-        const cooldownTime = 60 * 1000; // 60 seconds cooldown
+        const cooldownTime = 60 * 60 * 1000; // 1 hour cooldown
+        const cooldownKey = "lastClaimTime";
+        const ipCheckKey = "claimedIP";
         
-        function assignCoupon() {
-            const lastClaimTime = parseInt(localStorage.getItem("lastClaimTime")) || 0;
+        async function getIP() {
+            try {
+                const response = await fetch("https://api64.ipify.org?format=json");
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.error("Error fetching IP:", error);
+                return null;
+            }
+        }
+
+        async function assignCoupon() {
             const now = Date.now();
+            const lastClaimTime = parseInt(localStorage.getItem(cooldownKey)) || 0;
+            const savedIP = localStorage.getItem(ipCheckKey);
+            const userIP = await getIP();
             
-            if (now - lastClaimTime < cooldownTime) {
-                alert("You can only claim one coupon per minute. Please wait.");
+            if (savedIP && savedIP === userIP && now - lastClaimTime < cooldownTime) {
+                const remainingTime = Math.ceil((cooldownTime - (now - lastClaimTime)) / (60 * 1000));
+                document.getElementById("feedback").innerText = You can claim a new coupon in ${remainingTime} minutes.;
                 return;
             }
-            
+
+            const currentIndex = parseInt(localStorage.getItem("currentIndex")) || 0;
             const coupon = coupons[currentIndex];
+
             document.getElementById("couponDisplay").innerText = "Your Coupon: " + coupon;
             document.getElementById("couponDisplay").style.display = "block";
-            
-            // Save the current time to enforce cooldown
-            localStorage.setItem("lastClaimTime", now);
-            
-            // Move to the next coupon in round-robin fashion
-            currentIndex = (currentIndex + 1) % coupons.length;
-            localStorage.setItem("currentIndex", currentIndex);
+            document.getElementById("feedback").innerText = "";
+
+            // Update cooldown and tracking
+            localStorage.setItem(cooldownKey, now);
+            if (userIP) {
+                localStorage.setItem(ipCheckKey, userIP);
+            }
+
+            // Move to next coupon in round-robin fashion
+            localStorage.setItem("currentIndex", (currentIndex + 1) % coupons.length);
         }
     </script>
 </body>
